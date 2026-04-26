@@ -1008,6 +1008,12 @@ def main() -> None:
         print("  hook install            install post-commit/post-checkout git hooks (all platforms)")
         print("  hook uninstall          remove git hooks")
         print("  hook status             check if git hooks are installed")
+        print("  doc-graph setup         create orphan doc-graph branch to host graph files (one-time)")
+        print("  doc-graph update        CI: restore graph, incremental rebuild, push to doc-graph branch")
+        print("  doc-graph gen-ci        generate GitLab CI job config for automatic MR-triggered updates")
+        print("  doc-graph status        check if doc-graph branch exists locally and on origin")
+        print("    --release-branch B    target branch that MRs merge into (default: release)")
+        print("    --graph-branch B      dedicated graph branch name (default: doc-graph)")
         print("  gemini install          write GEMINI.md section + BeforeTool hook (Gemini CLI)")
         print("  gemini uninstall        remove GEMINI.md section + BeforeTool hook")
         print("  cursor install          write .cursor/rules/graphify.mdc (Cursor)")
@@ -1156,6 +1162,44 @@ def main() -> None:
             print(hook_status(Path(".")))
         else:
             print("Usage: graphify hook [install|uninstall|status]", file=sys.stderr)
+            sys.exit(1)
+    elif cmd == "doc-graph":
+        import argparse as _dg_ap
+        from graphify import docgraph as _dg
+
+        _p = _dg_ap.ArgumentParser(prog="graphify doc-graph", add_help=False)
+        _p.add_argument("subcmd", nargs="?", default="")
+        _p.add_argument("--release-branch", default="release")
+        _p.add_argument("--graph-branch", default="doc-graph")
+        _p.add_argument("--output", default=None)
+        _p.add_argument("--script-dir", default=".ci")
+        _dg_opts, _ = _p.parse_known_args(sys.argv[2:])
+
+        _subcmd = _dg_opts.subcmd
+        _graph_br = _dg_opts.graph_branch
+        _release_br = _dg_opts.release_branch
+
+        if _subcmd == "setup":
+            _dg.setup(Path("."), branch=_graph_br)
+        elif _subcmd == "update":
+            ok = _dg.update(Path("."), branch=_graph_br, release_branch=_release_br)
+            sys.exit(0 if ok else 1)
+        elif _subcmd == "gen-ci":
+            _out = Path(_dg_opts.output) if _dg_opts.output else None
+            _sdir = Path(_dg_opts.script_dir)
+            content = _dg.gen_gitlab_ci(
+                release_branch=_release_br,
+                graph_branch=_graph_br,
+                output=_out,
+                script_dir=_sdir,
+            )
+            if _out is None:
+                print(content)
+        elif _subcmd == "status":
+            print(_dg.status(Path("."), branch=_graph_br))
+        else:
+            print("Usage: graphify doc-graph [setup|update|gen-ci|status] [--release-branch B] [--graph-branch B]",
+                  file=sys.stderr)
             sys.exit(1)
     elif cmd == "query":
         if len(sys.argv) < 3:
