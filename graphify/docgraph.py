@@ -501,8 +501,8 @@ graphify-update-knowledge-graph:
     GIT_STRATEGY: clone
   before_script:
     - pip install graphify --quiet
-    - git config user.name "Graphify Bot"
-    - git config user.email "graphify-bot@noreply"
+    - git config user.name "${GITLAB_USER_NAME}"
+    - git config user.email "${GITLAB_USER_EMAIL}"
     # Authenticate so the job can push to the {graph_branch} branch
     - >
       git remote set-url origin

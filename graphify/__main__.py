@@ -1171,7 +1171,7 @@ def main() -> None:
         _p.add_argument("subcmd", nargs="?", default="")
         _p.add_argument("--release-branch", default="release")
         _p.add_argument("--graph-branch", default="doc-graph")
-        _p.add_argument("--output", default=None)
+        _p.add_argument("--output", default=".gitlab-ci.yml")
         _p.add_argument("--script-dir", default=".ci")
         _dg_opts, _ = _p.parse_known_args(sys.argv[2:])
 
@@ -1185,16 +1185,14 @@ def main() -> None:
             ok = _dg.update(Path("."), branch=_graph_br, release_branch=_release_br)
             sys.exit(0 if ok else 1)
         elif _subcmd == "gen-ci":
-            _out = Path(_dg_opts.output) if _dg_opts.output else None
+            _out = Path(_dg_opts.output)
             _sdir = Path(_dg_opts.script_dir)
-            content = _dg.gen_gitlab_ci(
+            _dg.gen_gitlab_ci(
                 release_branch=_release_br,
                 graph_branch=_graph_br,
                 output=_out,
                 script_dir=_sdir,
             )
-            if _out is None:
-                print(content)
         elif _subcmd == "status":
             print(_dg.status(Path("."), branch=_graph_br))
         else:
